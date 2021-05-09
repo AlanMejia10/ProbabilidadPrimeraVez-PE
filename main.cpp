@@ -1,26 +1,42 @@
 #include <iostream>
+#include <cstdlib>
 #include <armadillo>
 
-void get_data(int& num_states, int& initial_state, int& final_state, int& num_periods, arma::fmat& mat_transition);
-
+void clear_screen();
+void get_data(int& num_states, int& initial_state, int& final_state, int& num_periods, arma::fmat& mat_transition, bool first_time = true);
 arma::frowvec compute_probability(const int& initial_state, const int& final_state, const int& num_periods, const arma::fmat& mat_transition);
+void print_all_probabilities(const int& initial_state, const int& final_state, const arma::frowvec result);
 
 int main(int arg, char* argv[]){
     arma::fmat mat_transition;
     int num_states, initial_state, final_state, num_periods;
-    //get_data(num_states, initial_state, final_state, num_periods, mat_transition);
+    char res;
+    bool first_time = true, show_results;
 
-    /* Hard code */
-    arma::fmat mat_a = { {0.5, 0.5, 0}, {0.2, 0.5, 0.3}, {0, 0.2, 0.8} };
-    std::cout << "Probabilidad es: " << compute_probability(0, 1, 3, mat_a) << std::endl;
-    /* End hardcode */
+    do{
+        clear_screen();
+        std::cout << "Calculo de probabilidades de primera vez" << std::endl;
+        do{
+            get_data(num_states, initial_state, final_state, num_periods, mat_transition, first_time);
+            clear_screen();
+            arma::frowvec result = compute_probability(initial_state, final_state, num_periods, mat_transition);
+            std::cout << "La probabilidad P" << initial_state << "(T" << final_state << " = " << num_periods << ") = " << result(num_periods - 1) << std::endl;
+            std::cout << "Te gustaria ver las probabidades de los periodos anteriores? (s/n): ";
+            std::cin >> res;
+            if(res == 's') print_all_probabilities(initial_state, final_state, result);
+            first_time = false;
+            std::cout << "Te gustaria ingresar otro estado inicial, final y numero de periodos con la misma matriz? (s/n): ";
+            std::cin >> res;
+        } while (res == 's');
+        std::cout << "Te gustaria introducir nuevamente la matriz de transicion? (s/n): ";
+        first_time = true;
+        std::cin >> res;
+    }while(res == 's');
     return 0;
 }
 
-void get_data(int& num_states, int& initial_state, int& final_state, int& num_periods, arma::fmat& mat_transition){
-    std::cout << "Calculo de probabilidades de primera vez" << std::endl;
-    std::cout << "Ingresa el numero de estados: ";
-    std::cin >> num_states;
+void get_data(int& num_states, int& initial_state, int& final_state, int& num_periods, arma::fmat& mat_transition, bool first_time){
+
     std::cout << "Ingresa el estado inicial: ";
     std::cin >> initial_state;
     std::cout << "Ingresa el estado final: ";
@@ -28,14 +44,18 @@ void get_data(int& num_states, int& initial_state, int& final_state, int& num_pe
     std::cout << "Ingresa el numero de periodos: ";
     std::cin >> num_periods;
 
-    mat_transition.zeros(num_states, num_states);
-    std::cout << mat_transition << std::endl;
+    if(first_time){
+        std::cout << "Ingresa el numero de estados: ";
+        std::cin >> num_states;
+        mat_transition.zeros(num_states, num_states);
+        std::cout << "Ingresa la matriz de transicion" << std::endl;
 
-    for(int i = 0; i < static_cast<int>(mat_transition.n_rows); ++i)
-        for(int j = 0; j < static_cast<int>(mat_transition.n_cols); ++j){
-            std::cout << "Ingresa el elemento [" << i << ", " << j << "]: ";
-            std::cin >> mat_transition(i, j);
-        }
+        for(int i = 0; i < static_cast<int>(mat_transition.n_rows); ++i)
+            for(int j = 0; j < static_cast<int>(mat_transition.n_cols); ++j){
+                std::cout << "Ingresa el elemento [" << i << ", " << j << "]: ";
+                std::cin >> mat_transition(i, j);
+            }
+    }
 }
 
 arma::frowvec compute_probability(const int& initial_state, const int& final_state, const int& num_periods, const arma::fmat& mat_transition){
@@ -61,3 +81,15 @@ arma::frowvec compute_probability(const int& initial_state, const int& final_sta
     return probabilities;
 }
 
+void print_all_probabilities(const int& initial_state, const int& final_state, const arma::frowvec result){
+    for(int i = 0; i < static_cast<int>(result.n_cols); ++i)
+        std::cout << "La probabilidad P" << initial_state << "(T" << final_state << " = " << i + 1 << ") = " << result(i) << std::endl;
+}
+
+void clear_screen(){
+#ifdef _WIN32
+    std::system("cls");
+#else
+    std::system ("clear");
+#endif
+}
